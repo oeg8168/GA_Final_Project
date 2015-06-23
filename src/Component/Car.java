@@ -48,7 +48,13 @@ public class Car {
 	} // end of getCarImage()
 
 	public static int getOverlapping(Car c1, Car c2) {
-		return 0;
-	} // end of getOverlapping
+		int offsetX = c2.getOriginPoint().x - c1.getOriginPoint().x;
+		int offsetY = c2.getOriginPoint().y - c1.getOriginPoint().y;
 
+		Image temp = c1.getCarImage();
+		temp.addImage(c2.getCarImage(), offsetX, offsetY, true);
+		temp.saveAs(GlobalParam.OUTPUT_FOLDER_PATH + "2car.png");
+
+		return Tools.countBlack(c1.getCarImage()) + Tools.countBlack(c2.getCarImage()) - Tools.countBlack(temp);
+	} // end of getOverlapping()
 } // end of class Car
