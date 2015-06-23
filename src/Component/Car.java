@@ -51,9 +51,18 @@ public class Car {
 		int offsetX = c2.getOriginPoint().x - c1.getOriginPoint().x;
 		int offsetY = c2.getOriginPoint().y - c1.getOriginPoint().y;
 
+		// For speed up
+		if (Math.abs(offsetX) > 75 || Math.abs(offsetY) > 75) {
+			return 0;
+		}
+
 		Image temp = c1.getCarImage();
 		temp.addImage(c2.getCarImage(), offsetX, offsetY, true);
-		temp.saveAs(GlobalParam.OUTPUT_FOLDER_PATH + "2car.png");
+		// temp.saveAs(GlobalParam.OUTPUT_FOLDER_PATH + "2car.png");
+
+		// System.out.println("offsets:\t" + offsetX + "\t" + offsetY);
+		// System.out.println(Tools.countBlack(c1.getCarImage()) +
+		// Tools.countBlack(c2.getCarImage()) - Tools.countBlack(temp));
 
 		return Tools.countBlack(c1.getCarImage()) + Tools.countBlack(c2.getCarImage()) - Tools.countBlack(temp);
 	} // end of getOverlapping()
