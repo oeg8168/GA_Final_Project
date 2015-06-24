@@ -1,13 +1,13 @@
 package GA;
 
 import java.util.ArrayList;
-
 import javaxt.io.Image;
 import Component.Car;
 import Main.GlobalParam;
 
 public class GA {
 
+	static int maxGeneration;
 	static int populationSize;
 	static ArrayList<Individual> population;
 
@@ -20,25 +20,31 @@ public class GA {
 		initialize();
 
 		for (Individual individual : population) {
-			individual.outputImg();
+			individual.outputImg(GlobalParam.OUTPUT_FOLDER_PATH + individual.toString() + "_1.jpg");
+			
+			individual.countOverlapping();
+			individual.forceFeasible();
+			
+			individual.outputImg(GlobalParam.OUTPUT_FOLDER_PATH + individual.toString() + "_2.jpg");
 		}
 
 	} // end of run()
 
 	public static void setParam() {
-		populationSize = 10;
+		maxGeneration = 1000;
+		populationSize = 1;
 		mutationRate = 0.5;
 		crossoverRate = 0.8;
 	} // end of setParam()
 
 	public static void initialize() {
 		population = new ArrayList<Individual>();
-		Image map = new Image(GlobalParam.INPUT_FOLDER_PATH + "3.bmp");
+		Image map = new Image(GlobalParam.INPUT_FOLDER_PATH + "4.bmp");
 
 		for (int i = 0; i < populationSize; i++) {
 			Individual individual = new Individual(map);
-			// int carNumber = 10;
-			int carNumber = (int) (Math.random() * GlobalParam.MAX_CARS);
+			int carNumber = 10;
+			// int carNumber = (int) (Math.random() * GlobalParam.MAX_CARS);
 
 			for (int j = 0; j < carNumber; j++) {
 				int carX = (int) (Math.random() * individual.map.getWidth());
@@ -55,5 +61,13 @@ public class GA {
 		}
 
 	} // end of initialize()
+
+	public static void crossover() {
+
+	} // end of crossover()
+
+	public static void mutation() {
+
+	} // end of mutation()
 
 } // end of class GA
