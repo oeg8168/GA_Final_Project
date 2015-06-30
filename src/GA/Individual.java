@@ -1,58 +1,63 @@
 package GA;
 
-import java.awt.image.BufferedImage;
-import java.awt.image.ColorModel;
-import java.awt.image.WritableRaster;
 import java.util.ArrayList;
 import java.util.HashMap;
 
 import javaxt.io.Image;
 import Component.Car;
 import Component.Pair;
+import Component.Tools;
 
 public class Individual {
 
 	public Image map;
 	public ArrayList<Car> carList;
+
+	private Image combinedMap;
+	private double fitness;
+
 	public HashMap<Pair<Car, Car>, Integer> overlapping;
 
-	public Individual(String mapFilePath) {
-		this(new Image(mapFilePath));
+	public Individual(String mapFilePath, ArrayList<Car> inputCarList) {
+		this(new Image(mapFilePath), inputCarList);
 	}
 
-	public Individual(Image inputMap) {
-		map = inputMap.copy();
+	public Individual(Image inputMap, ArrayList<Car> inputCarList) {
+		map = Tools.getCopyImg(inputMap);
 
-		carList = new ArrayList<Car>();
-		overlapping = new HashMap<Pair<Car, Car>, Integer>();
+		carList = new ArrayList<Car>(inputCarList);
+
+		updateCombinedMap();
+		updateFitness();
 	}
 
 	public double getFitness() {
-		return 0;
+		return fitness;
 	} // end of getFitness()
+
+	private void updateCombinedMap() {
+		combinedMap = Tools.getCopyImg(map);
+
+		for (Car car : carList) {
+			combinedMap.addImage(car.getCarImage(), car.getOriginPoint().x, car.getOriginPoint().y, false);
+		}
+	} // end of addCarsToMap()
+
+	/**
+	 * Count fitness by counting black pixels
+	 */
+	private void updateFitness() {
+		fitness = Tools.countBlack(combinedMap) + carList.size();
+	} // end of countFitness()
 
 	/**
 	 * Output this individual as image file
 	 * 
 	 * @param path
 	 *            - Output file path
-	 * @see <a
-	 *      href="http://stackoverflow.com/questions/3514158/how-do-you-clone-a-bufferedimage">
-	 *      Reference link</a>
 	 */
 	public void outputImg(String path) {
-
-		ColorModel cm = map.getBufferedImage().getColorModel();
-		boolean isAlphaPremultiplied = cm.isAlphaPremultiplied();
-		WritableRaster raster = map.getBufferedImage().copyData(null);
-		Image output = new Image(new BufferedImage(cm, raster, isAlphaPremultiplied, null));
-
-		for (Car car : carList) {
-			output.addImage(car.getCarImage(), car.getOriginPoint().x, car.getOriginPoint().y, false);
-			output.addText(String.valueOf(carList.indexOf(car)), car.getOriginPoint().x, car.getOriginPoint().y);
-		}
-
-		output.saveAs(path);
+		combinedMap.saveAs(path);
 	} // end of outputImg()
 
 	/**
@@ -68,10 +73,60 @@ public class Individual {
 		System.out.println();
 	} // end of showCars()
 
+	private void removeMapCollision() {
+		ArrayList<Car> removeList = new ArrayList<Car>();
+
+		for (Car car : carList) {
+			if (Tools.isCollision(map, car)) {
+				removeList.add(car);
+			}
+		}
+		carList.removeAll(removeList);
+	} // end of removeMapCollision()
+
+	private void removeCarCollision() {
+		int totalOverlapping;
+
+		do {
+			totalOverlapping = 0;
+
+			countOverlapping();
+
+			int maxOverlapping = 0;
+			int maxOverlappingIndex = -1;
+
+			for (int i = 0; i < carList.size(); i++) {
+				int carOverlapping = 0;
+				for (int j = 0; j < carList.size(); j++) {
+					Car c1 = carList.get(i);
+					Car c2 = carList.get(j);
+					carOverlapping += overlapping.get(new Pair<Car, Car>(c1, c2));
+				}
+
+				totalOverlapping += carOverlapping;
+
+				if (carOverlapping > maxOverlapping) {
+					maxOverlapping = carOverlapping;
+					maxOverlappingIndex = i;
+				}
+			}
+
+			// showOverlapping();
+
+			if (totalOverlapping != 0) {
+				carList.remove(maxOverlappingIndex);
+				// System.out.println("Take off car " + maxOverlappingIndex);
+			}
+
+		} while (totalOverlapping > 0);
+	} // end of removeCarCollision()
+
 	/**
 	 * Count overlapping each 2 cars and save it
 	 */
 	public void countOverlapping() {
+		overlapping = new HashMap<Pair<Car, Car>, Integer>();
+
 		for (int i = 0; i < carList.size(); i++) {
 			for (int j = i; j < carList.size(); j++) {
 				Car c1 = carList.get(i);
@@ -130,40 +185,13 @@ public class Individual {
 
 	} // end of showOverlapping()
 
+	/**
+	 * Force this individual become feasible solution
+	 */
 	public void forceFeasible() {
-
-		int totalOverlapping;
-
-		do {
-			countOverlapping();
-			totalOverlapping = 0;
-
-			int maxOverlapping = 0;
-			int maxOverlappingIndex = -1;
-
-			for (int i = 0; i < carList.size(); i++) {
-				int carOverlapping = 0;
-				for (int j = 0; j < carList.size(); j++) {
-					Car c1 = carList.get(i);
-					Car c2 = carList.get(j);
-					carOverlapping += overlapping.get(new Pair<Car, Car>(c1, c2));
-				}
-
-				totalOverlapping += carOverlapping;
-
-				if (carOverlapping > maxOverlapping) {
-					maxOverlapping = carOverlapping;
-					maxOverlappingIndex = i;
-				}
-			}
-
-			showOverlapping();
-
-			if (totalOverlapping != 0) {
-				carList.remove(maxOverlappingIndex);
-				System.out.println("Take off car " + maxOverlappingIndex);
-			}
-		} while (totalOverlapping > 0);
-
+		removeMapCollision();
+		removeCarCollision();
+		updateCombinedMap();
+		updateFitness();
 	} // end of forceFeasible()
 } // end of class Individual
